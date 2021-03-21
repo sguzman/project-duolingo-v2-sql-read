@@ -121,16 +121,19 @@ def init_json() -> None:
 class Server(sql_read_pb2_grpc.SQLReadServicer):
     usr: str = 'SELECT username from duolingo.data.queue'
     rm: str = 'DELETE FROM duolingo.data.queue WHERE username = %s'
-    refill: str = 'INSERT INTO duolingo.data.queue (SELECT username from duolingo.data.users)'
-    count: str = 'SELECT COUNT(*) FROM duolingo.data.queue'
+    refill_1: str = 'INSERT INTO duolingo.data.queue ('
+    refill_2: str = 'SELECT username from duolingo.data.users)'
+    refill: str = refill_1 + refill_2
+
+    count_table: str = 'SELECT COUNT(*) FROM duolingo.data.queue'
 
     @staticmethod
     def count() -> int:
         log.info('Counting queue table')
         curr = conn.cursor()
-        curr.execute(Server.count)
+        curr.execute(Server.count_table)
         count: int = curr.fetchone()[0]
-        
+
         log.info('Queue table has %d entries', count)
         return count
 
@@ -142,7 +145,6 @@ class Server(sql_read_pb2_grpc.SQLReadServicer):
         conn.commit()
         curr.close()
         log.info('Finished refilling user queue table')
-        
 
     @staticmethod
     def drop_user(user: str) -> None:
